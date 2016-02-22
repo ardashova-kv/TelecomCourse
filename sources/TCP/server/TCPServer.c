@@ -10,6 +10,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <assert.h>
 
 #pragma comment (lib, "Ws2_32.lib")
 #pragma comment (lib, "Mswsock.lib")
@@ -25,12 +26,16 @@ struct user
 {
 	char* username;
 	char* password;
+	time_t last_seen;
 };
+
+struct user users[max_users];
+int user_num = 0;
 
 struct post
 {
 	char* author;
-	long date;
+	time_t date;
 	char* content;
 };
 
@@ -52,14 +57,23 @@ struct forum_t
 struct request
 {
 	char* command_text;
-	enum {POST, CREATE, SHOWALL, RECENT} command;
+	enum {POST, REPLY, SHOWALL, SHOW, RECENT, LOGIN, REGISTER} command;
 	char* topic;
 	char* content;
-	char* id;
+	int id;
+	char* login;
+	char* password;
+};
+
+struct client
+{
+	SOCKET socket;
+	int num;
+	struct user* usr;
 };
 
 int worker_count = 0;
-SOCKET worker_socket[max_conn];
+struct client clients[max_conn];
 
 HANDLE mutex;
 
@@ -75,22 +89,66 @@ struct request parseRequest(char* request)
 	{
 		req.command = POST;
 		req.topic = strtok_s(NULL, delim, &context);
+		req.content = strtok_s(NULL, "", &context);
 	}
 	else if (strcmp(req.command_text, "SHOWALL") == 0)
 	{
 		req.command = SHOWALL;
-		// req.id = strtok(NULL, delim);
 	}
-	req.content = strtok_s(NULL, "", &context);
+	else if (strcmp(req.command_text, "SHOW") == 0)
+	{
+		req.command = SHOW;
+		char* id_text = strtok_s(NULL, delim, &context);
+		req.id = atoi(id_text);
+	}
+	else if (strcmp(req.command_text, "REPLY") == 0)
+	{
+		req.command = REPLY;
+		char* id_text = strtok_s(NULL, delim, &context);
+		req.id = atoi(id_text);
+		req.content = strtok_s(NULL, "", &context);
+	}
+	else if (strcmp(req.command_text, "LOGIN") == 0)
+	{
+		req.command = LOGIN;
+		req.login = strtok_s(NULL, delim, &context);
+		req.password = strtok_s(NULL, delim, &context);
+	}
+	else if (strcmp(req.command_text, "REGISTER") == 0)
+	{
+		req.command = REGISTER;
+		req.login = strtok_s(NULL, delim, &context);
+		req.password = strtok_s(NULL, delim, &context);
+	}
+	else if (strcmp(req.command_text, "RECENT") == 0)
+	{
+		req.command = RECENT;
+	}
 	return req;
 }
 
-void processRequest(struct request req, char* buffer)
+int showTopic(char* buffer, struct thread t, int i, int buf_len) {
+	buf_len += sprintf(buffer + buf_len, "-- Thread %d: \n", i);
+	buf_len += sprintf(buffer + buf_len, "-- Topic: %s \n", t.topic);
+	buf_len += sprintf(buffer + buf_len, "-- User: %s \n", t.posts[0].author);
+	char date_txt[30];
+	strcpy(date_txt, ctime(&(t.posts[0].date)));
+	date_txt[strlen(date_txt)-1] = '\0';
+
+	buf_len += sprintf(buffer + buf_len, "-- Post at %s:\n %s \n", date_txt, t.posts[0].content);
+	for (int p = 1; p < forum.threads[i].post_num; p++)
+	{
+		buf_len += sprintf(buffer + buf_len, "-- Reply %d from %s:\n %s\n", p, t.posts[p].author, t.posts[p].content);
+	}
+	return buf_len;
+}
+
+void processRequest(struct request req, char* buffer, int usr)
 {
 	if (req.command == POST) {
 		struct post p;
 		p.date = time(NULL);
-		p.author = "abc";
+		p.author = users[usr].username;
 		p.content = req.content;
 
 		struct thread th;
@@ -110,19 +168,82 @@ void processRequest(struct request req, char* buffer)
 		int buf_len = 0;
 		for (int i = 0; i < forum.thread_num; i++)
 		{
-			buf_len += sprintf(buffer + buf_len, "-- Thread %d: \n", i);
-			buf_len += sprintf(buffer + buf_len, "-- Topic: %s \n", forum.threads[i].topic);
-			buf_len += sprintf(buffer + buf_len, "-- Post: %s \n", forum.threads[i].posts[0].content);
-			for (int p = 0; p < forum.threads[i].post_num; p++)
+			buf_len = showTopic(buffer, forum.threads[i], i, buf_len);
+		}
+	}
+
+	else if (req.command == SHOW) {
+		bzero(buffer, 9999);
+		int i = req.id;
+		showTopic(buffer, forum.threads[i], i, 0);
+	}
+
+	else if (req.command == REPLY) {
+		struct post p;
+		p.date = time(NULL);
+		p.author = users[usr].username;
+		p.content = req.content;
+
+		struct thread* th = &forum.threads[req.id];
+		th->posts[th->post_num] = p;
+		th->post_num++;
+
+		sprintf(buffer, "Reply num %d posted\n", forum.thread_num);
+	}
+
+	else if (req.command == RECENT) {
+		bzero(buffer, 9999);
+		int i = req.id;
+		int buf_len = 0;
+		for (int th = 0; th < forum.thread_num; th++)
+		{
+			for (int n = 0; n < forum.threads[th].post_num; n++)
 			{
-				buf_len += sprintf(buffer + buf_len, "%s\n", forum.threads[i].posts[p].content);
+				struct post* p = &(forum.threads[th].posts[n]);
+				if (p->date > users[usr].last_seen)
+				{
+					buf_len += sprintf(buffer + buf_len,
+						"-- Post from topic \"%s\" user %s:\n %s \n",
+						forum.threads[th].topic, p->author, p->content);
+				}
 			}
 		}
+		users[usr].last_seen = time(NULL);
 	}
 
 	else {
 		strcpy(buffer, "Unknown command\n");
 	}
+}
+
+int processAuth(struct request req, char* buffer)
+{
+	if (req.command == REGISTER) {
+		struct user usr;
+		assert(user_num < max_users);
+		usr.username = req.login;
+		usr.password = req.password;
+		usr.last_seen = 0;
+		users[user_num] = usr;
+		sprintf(buffer, "User %s created successfully\n", usr.username);
+		user_num++;
+		return user_num - 1;
+	}
+	if (req.command == LOGIN) {
+		for (int i = 0; i < user_num; i++)
+		{
+			if (strcmp(users[i].username, req.login) == 0 &&
+				strcmp(users[i].password, req.password) == 0)
+			{
+				sprintf(buffer, "Logged in as %s\n", users[i].username);
+				return i;
+			}
+		}
+		strcpy(buffer, "Incorrect login or password\n");
+		return -1;
+	}
+	strcpy(buffer, "You need to login first\n");
+	return -1;
 }
 
 void loadDB() {
@@ -152,11 +273,21 @@ void loadDB() {
 	printf("Read %d bytes\n", result);
 
 	pch = strtok_s(buffer, "|", &context);
+	int usr = -1;
 	while (pch != NULL)
 	{
 		printf("Request is:\n %s \n", pch);
 		struct request req = parseRequest(pch);
-		processRequest(req, resp_buffer);
+		int new_usr = processAuth(req, resp_buffer);
+		if (new_usr >= 0)
+		{
+			usr = new_usr;
+			printf("Auth Response is:\n%s \n", resp_buffer);
+		}
+		if (usr >= 0)
+		{
+			processRequest(req, resp_buffer, usr);
+		}
 		printf("Response is:\n%s \n", resp_buffer);
 		pch = strtok_s(NULL, "|", &context);
 	}
@@ -203,16 +334,17 @@ int writeWithLength(SOCKET socket, const char* content) {
 }
 
 DWORD WINAPI worker(LPVOID arg) {
-	SOCKET socketfd = *(SOCKET*)arg;
-	printf("Worker for %d is up\n", socketfd);
+	struct client cl = *(struct client*)arg;
+	printf("Worker number %d for socket %d is up\n", cl.num, cl.socket);
 	char* buffer = malloc(sizeof(char)*9999);
 	char* content_start;
+	int usr = -1;
 	char recv_len_buf[5];
 	int recv_msg_len;
 	int n;
 
 	while (1) {
-		n = readn(socketfd, recv_len_buf, 5);
+		n = readn(cl.socket, recv_len_buf, 5);
 		if (n < 0) {
 			perror("ERROR getting message length");
 			break;
@@ -222,7 +354,7 @@ DWORD WINAPI worker(LPVOID arg) {
 		printf("Receiving message with length %d\n", recv_msg_len);
 
 		bzero(buffer, 9999);
-		n = readn(socketfd, buffer, recv_msg_len);
+		n = readn(cl.socket, buffer, recv_msg_len);
 		if (n < 0) {
 			perror("ERROR reading message");
 			break;
@@ -234,13 +366,19 @@ DWORD WINAPI worker(LPVOID arg) {
 		WaitForSingleObject(
 			mutex,    // handle to mutex
 			INFINITE);  // no time-out interval
-
-		processRequest(req, buffer);
+		if (usr < 0)
+		{
+			usr = processAuth(req, buffer);
+		} else
+		{
+			processRequest(req, buffer, usr);
+		}
 
 		ReleaseMutex(mutex);
 
-		if (writeWithLength(socketfd, buffer)) { break; }
+		if (writeWithLength(cl.socket, buffer)) { break; }
 	}
+	return 0;
 }
 
 DWORD WINAPI accept_loop(LPVOID arg) {
@@ -266,15 +404,17 @@ DWORD WINAPI accept_loop(LPVOID arg) {
 		}
 		printf("Connection, socket: %d, thread %d\n", newsockfd, worker_count);
 
-		worker_socket[worker_count] = newsockfd;
+		clients[worker_count].socket = newsockfd;
+		clients[worker_count].num = worker_count;
+		clients[worker_count].usr = NULL;
 
-		SOCKET* sock = &(worker_socket[worker_count]);
+		struct client* arg = &(clients[worker_count]);
 
 		worker_thread[worker_count] = CreateThread(
 			NULL,                   // default security attributes
 			0,                      // use default stack size  
 			worker,       // thread function name
-			(void*)sock,          // argument to thread function 
+			(void*)arg,          // argument to thread function 
 			0,                      // use default creation flags 
 			NULL);   // returns the thread identifier 
 
@@ -283,8 +423,8 @@ DWORD WINAPI accept_loop(LPVOID arg) {
 
 	printf("Closed accept socket\n");
 	for (i = 0; i < worker_count; i++) {
-		shutdown(worker_socket[i], 2);
-		closesocket(worker_socket[i]);
+		shutdown(clients[i].socket, 2);
+		closesocket(clients[i].socket);
 	}
 
 	WaitForMultipleObjects(
@@ -374,8 +514,8 @@ int main(int argc, char** argv) {
 		else if (command == 'd') {
 			int client;
 			scanf("%d", &client);
-			shutdown(worker_socket[client], 2);
-			closesocket(worker_socket[client]);
+			shutdown(clients[client].socket, 2);
+			closesocket(clients[client].socket);
 		}
 	}
 
