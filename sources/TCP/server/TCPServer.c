@@ -154,10 +154,14 @@ void processRequest(struct request req, char* buffer, int usr)
 		struct thread th;
 		th.topic = req.topic;
 		th.post_num = 1;
-		th.post_cap = 1;
-		th.posts = malloc(sizeof(struct post));
+		th.post_cap = 10;
+		th.posts = malloc(sizeof(struct post)*10);
 		th.posts[0] = p;
 
+		if (forum.thread_num + 1 >= forum.thread_cap)
+		{
+			forum.threads = realloc(forum.threads, sizeof(struct thread)*forum.thread_cap * 2);
+		}
 		forum.threads[forum.thread_num] = th;
 		sprintf(buffer, "Topic %d added\n", forum.thread_num);
 		forum.thread_num++;
@@ -185,6 +189,10 @@ void processRequest(struct request req, char* buffer, int usr)
 		p.content = req.content;
 
 		struct thread* th = &forum.threads[req.id];
+		if (th->post_num + 1 >= th->post_cap)
+		{
+			th->posts = realloc(th->posts, sizeof(struct post) * th->post_cap * 2);
+		}
 		th->posts[th->post_num] = p;
 		th->post_num++;
 
