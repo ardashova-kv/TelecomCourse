@@ -4,5 +4,5 @@
 * SMTP client -- RUST
 
 2 Муравьев Федор
-IMAP4 server -- Java
-SMTP client -- C++
+* IMAP4 server -- Java
+* SMTP client -- C++
