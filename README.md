@@ -6,3 +6,8 @@
 2 Муравьев Федор
 * IMAP4 server -- Java
 * SMTP client -- C++
+
+3 Владислав Бушин
+* POP3 server -- C++
+* SMTP client -- Java
+* [All is here](https://github.com/wladez/Seti.git)
