@@ -12,4 +12,4 @@
 * SMTP client -- Java
 * [All is here](https://github.com/wladez/Seti.git)
 
-4 Хуторной Ярослав  ftp сервер и клиент c++
+4 Хуторной Ярослав  ftp  клиент c++, сервер - не определился пока что
