@@ -13,7 +13,7 @@
 * [All is here](https://github.com/wladez/Seti.git)
 
 4 Хуторной Ярослав  
-* FTP - клиент на c++ 
-* SMTP - сервер на c++
+* FTP - клиент на C++ 
+* SMTP - сервер на C++
 
 5 Родина Лера pop3-клиент, ftp-сервер, оба на питоне
