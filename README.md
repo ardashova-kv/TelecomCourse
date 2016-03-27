@@ -13,7 +13,7 @@
 * [All is here](https://github.com/wladez/Seti.git)
 
 4 Хуторной Ярослав  
-* FTP - клиент на C++ 
+* [FTP - клиент на C++](https://github.com/KhutornoyYaroslav/TelecomCourse/blob/master/main.cpp)
 * SMTP - сервер на C++
 
 5 Родина Лера pop3-клиент, ftp-сервер, оба на питоне
