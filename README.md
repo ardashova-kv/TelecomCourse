@@ -1,7 +1,7 @@
 # TelecomCourse
 1 Азат Абдуллин
 * [HTTP server -- Kotlin](https://github.com/AbdullinAM/http_server_kotlin)
-* [SMTP client -- Kotlin](https://github.com/AbdullinAM/smtp_server_kotlin.git)
+* [SMTP client -- Kotlin](https://github.com/AbdullinAM/smtp_client_kotlin.git)
 
 2 Муравьев Федор
 * IMAP4 server -- Java
