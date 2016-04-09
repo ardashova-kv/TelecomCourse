@@ -9,8 +9,7 @@
 
 3 Владислав Бушин
 * POP3 server -- C++
-* SMTP client -- Java
-* [All is here](https://github.com/wladez/Seti.git)
+* [SMTP client -- Java](https://github.com/wladez/SMTP_client.git)
 
 4 Хуторной Ярослав  
 * [FTP - клиент на C++](https://github.com/KhutornoyYaroslav/TelecomCourse/blob/master/main.cpp)
