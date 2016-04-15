@@ -8,7 +8,7 @@
 * SMTP client -- C++
 
 3 Владислав Бушин
-* POP3 server -- C++
+* [POP3 server -- C++](https://github.com/wladez/POP3-server.git)
 * [SMTP client -- Java](https://github.com/wladez/SMTP_client.git)
 
 4 Хуторной Ярослав  
