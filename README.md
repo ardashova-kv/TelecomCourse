@@ -24,3 +24,7 @@
 7 Никитин Егор
 * HTTP-сервер Java
 * POP3-клиент Java
+
+8 Федоров Олег
+* HTTP-сервер Python
+* SMTP-клиент Python
