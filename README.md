@@ -15,7 +15,7 @@
 * [FTP - клиент на C++](https://github.com/KhutornoyYaroslav/TelecomCourse/blob/master/main.cpp)
 * :) - сервер на C++
 
-5 Родина Лера pop3-клиент, ftp-сервер, оба на питоне
+5 Родина Лера pop3-клиент python, ftp-сервер java
 
 6 Ардашова Ксения  
 * HTTP - сервер на C++ 
