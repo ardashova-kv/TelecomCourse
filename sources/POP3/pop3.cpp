@@ -19,8 +19,7 @@ void POP3::sendCommand(const std::string &command) {
 }
 
 void POP3::getResponse(ServerResponse *response) {
-    std::string buffer;
-    socket->readLine(&buffer);
+    std::string buffer = socket->readLine();
 
     response->status = (buffer[0] == '+');
     response->statusMessage = buffer;
@@ -29,14 +28,11 @@ void POP3::getResponse(ServerResponse *response) {
 
 void POP3::getMultilineData(ServerResponse *response) {
     std::string buffer;
-    size_t bytesRead;
 
     while (true) {
-        buffer.clear();
+        buffer = socket->readLine();
 
-        bytesRead = socket->readLine(&buffer);
-
-        if (buffer == "." || bytesRead == 0) {
+        if (buffer == ".") {
             break;
         }
         response->data.push_back(buffer);

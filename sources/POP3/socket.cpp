@@ -5,6 +5,7 @@
 
 #include <sys/socket.h>
 #include <netdb.h>
+#include <algorithm>
 
 #include <unistd.h>
 #include <string.h>
@@ -58,16 +59,6 @@ void Socket::close() {
     ::close(socketfd);
 }
 
-ssize_t Socket::read(char *buffer, size_t size) {
-    ssize_t bytesRead = ::read(socketfd, buffer, size);
-    if (bytesRead < 0) {
-        printf("Recieving error: Unable to resolve data from remote host");
-        return 0;
-    }
-
-    return bytesRead;
-}
-
 bool Socket::write(std::string request) {
     if (::write(socketfd, request.c_str(), request.length()) < 0) {
         printf("Sending error: Unable to send data to remote host");
@@ -76,27 +67,33 @@ bool Socket::write(std::string request) {
     return true;
 }
 
-bool Socket::readCharacter(char *buffer) {
-    return read(buffer, 1) > 0;
-}
-
-size_t Socket::readLine(std::string *line) {
-    char buffer[2];
-    *line = "";
-    size_t bytesRead = 0;
-
-    if (readCharacter(&(buffer[1]))) {
-        do {
-            *line += buffer[0];
-            buffer[0] = buffer[1];
-            bytesRead++;
+string Socket::readLine() {
+    const string endline = "\r\n";
+    string::iterator it;
+    while(true) {
+        it = std::search(buffer.begin(), buffer.end(),
+                              endline.begin(), endline.end());
+        if (it != buffer.end()) {
+            break;
         }
-        while (readCharacter(&(buffer[1])) &&
-               !(buffer[0] == '\r' && buffer[1] == '\n'));
 
-        line->erase(0, 1);
+        const int bufSize = 1024;
+        char* tmpBuf = (char*) calloc(bufSize, 1);
+        ssize_t bytesRead = ::read(socketfd, tmpBuf, bufSize);
+//        cout << "Received " << tmpBuf << " size " << bytesRead << endl;
+        if (bytesRead < 0) {
+            printf("Recieving error: Unable to resolve data from remote host");
+            return 0;
+        }
+        buffer += tmpBuf;
+        free(tmpBuf);
+        it = std::search(buffer.begin(), buffer.end(),
+                              endline.begin(), endline.end());
     }
 
-    return bytesRead;
+    string line(buffer.begin(), it);
+    buffer.erase(buffer.begin(), it+endline.size());
+//    cout << "Returned " << line << endl;
+    return line;
 }
 

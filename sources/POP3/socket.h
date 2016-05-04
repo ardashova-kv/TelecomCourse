@@ -2,7 +2,6 @@
 #define _SOCKET__H
 
 #include <string>
-
 #include "error.h"
 
 class Socket {
@@ -10,11 +9,9 @@ class Socket {
 public:
     ~Socket();
 
-    ssize_t read(char *buffer, size_t size);
-
     bool write(std::string request);
 
-    size_t readLine(std::string *line);
+    std::string readLine();
 
     bool open(std::string const& address, int port);
 
@@ -22,9 +19,7 @@ private:
 
     void close();
 
-    bool readCharacter(char *buffer);
-
-    bool has_suffix(const std::string &str, const std::string &suffix);
+    std::string buffer;
 };
 
 #endif
