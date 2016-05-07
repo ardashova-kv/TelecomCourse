@@ -18,8 +18,8 @@
 5 Родина Лера pop3-клиент python, ftp-сервер java
 
 6 Ардашова Ксения  
-* HTTP - сервер на C++ 
-* POP3 - клиент на C++
+* [HTTP - сервер на C++](https://github.com/ardashova-kv/TelecomCourse/tree/master/sources/HTTP)
+* [POP3 - клиент на C++](https://github.com/ardashova-kv/TelecomCourse/tree/master/sources/POP3)
 
 7 Никитин Егор
 * HTTP-сервер Java
