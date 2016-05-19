@@ -78,6 +78,18 @@ bool POP3::authenticate(std::string const &username, std::string const &password
     return true;
 }
 
+bool POP3::printStats() {
+    ServerResponse response;
+
+    sendCommand("STAT");
+    getResponse(&response);
+    for (std::string& line: response.data) {
+        std::cout << line << std::endl;
+    }
+
+    return true;
+}
+
 bool POP3::printMessageList() {
     ServerResponse response;
 
@@ -85,7 +97,7 @@ bool POP3::printMessageList() {
 
     getResponse(&response);
     if (!response.status) {
-        fmt::printf("Unable to retrieve message list: %s", response.statusMessage);
+        fmt::printf("Unable to retrieve message list: %s\n", response.statusMessage);
         return false;
     }
 
@@ -101,13 +113,77 @@ bool POP3::printMessageList() {
     return true;
 }
 
+std::vector<int> POP3::getMessageList() {
+    ServerResponse response;
+    std::vector<int> list;
+
+    sendCommand("LIST");
+
+    getResponse(&response);
+    if (!response.status) {
+        fmt::printf("Unable to retrieve message list: %s\n", response.statusMessage);
+        return list;
+    }
+
+    getMultilineData(&response);
+
+    for (std::string& line: response.data) {
+        unsigned long pos = line.find(' ');
+        std::string src = line.substr(0, pos);
+        list.push_back(stoi(src));
+    }
+    return list;
+}
+
 bool POP3::printMessage(int messageId) {
     ServerResponse response;
 
-    std::stringstream command;
-    command << "RETR " << messageId;
+    sendCommand("RETR " + std::to_string(messageId));
 
-    sendCommand(command.str());
+    getResponse(&response);
+    if (!response.status) {
+        fmt::printf("Unable to retrieve requested message: %s", response.statusMessage);
+        return false;
+    }
+
+    getMultilineData(&response);
+
+    for (std::string& line: response.data) {
+        std::cout << line << std::endl;
+    }
+    return true;
+}
+
+bool POP3::deleteMessage(int messageId) {
+    ServerResponse response;
+
+    sendCommand("DELE " + std::to_string(messageId));
+
+    getResponse(&response);
+    if (!response.status) {
+        fmt::printf("Unable to retrieve requested message: %s", response.statusMessage);
+        return false;
+    }
+    return true;
+}
+
+bool POP3::reset() {
+    ServerResponse response;
+
+    sendCommand("RSET");
+
+    getResponse(&response);
+    if (!response.status) {
+        fmt::printf("Unable to retrieve requested message: %s", response.statusMessage);
+        return false;
+    }
+    return true;
+}
+
+bool POP3::printHeaders(int messageId) {
+    ServerResponse response;
+
+    sendCommand(fmt::format("TOP %d 0", messageId));
 
     getResponse(&response);
     if (!response.status) {

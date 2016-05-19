@@ -3,6 +3,7 @@
 
 #include <list>
 #include <string>
+#include <vector>
 
 #include "error.h"
 #include "socket.h"
@@ -21,6 +22,16 @@ public:
 
     bool printMessage(int messageId);
 
+    bool printStats();
+
+    bool deleteMessage(int messageId);
+
+    bool reset();
+
+    std::vector<int> getMessageList();
+
+    bool printHeaders(int messageId);
+
 private:
     struct ServerResponse;
 
@@ -33,6 +44,9 @@ private:
     bool readWelcome();
 
     void close();
+
+    bool reset(int messageId);
+
 };
 
 struct POP3::ServerResponse {

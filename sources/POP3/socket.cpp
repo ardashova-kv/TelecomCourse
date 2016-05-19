@@ -60,6 +60,7 @@ void Socket::close() {
 }
 
 bool Socket::write(std::string request) {
+    cout << "Wrote " << request << endl;
     if (::write(socketfd, request.c_str(), request.length()) < 0) {
         printf("Sending error: Unable to send data to remote host");
         return false;
@@ -93,7 +94,6 @@ string Socket::readLine() {
 
     string line(buffer.begin(), it);
     buffer.erase(buffer.begin(), it+endline.size());
-//    cout << "Returned " << line << endl;
     return line;
 }
 
