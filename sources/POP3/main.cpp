@@ -76,11 +76,11 @@ int main(int argc, char **argv)
                 pop3.reset();            // Убрать метки на удаление
                 break;
             case 5:
-                list = pop3.getMessageList();   // Получить список сообщений
-                // Вывести заголовки сообщений
-                for (int msg: list) {
-                    fmt::printf("Message number %d\n\n", msg);
-                    pop3.printHeaders(msg);
+                std::cout << "Enter message number \n" << endl;
+                num = getMessageNum();   // Запрос у пользователя номера сообщения
+
+                for (std::string& header: pop3.onlyHeaders(num)) {
+                    pop3.printHeader(header);
                 }
                 break;
             case 6:

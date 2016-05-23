@@ -76,28 +76,16 @@ bool POP3::printStats() {
 
 // Вывод списка сообщений и их размера
 bool POP3::printMessageList() {
+    std::vector<int> list = getMessageList();
 
-    ServerResponse response;
-    // Запрос
-    sendCommand("LIST");
-    // Ответ
-    getResponse(&response);
+    // Вывести заголовки сообщений
+    for (int msg: list) {
+        fmt::printf("\n-- Message number %d --\n", msg);
+        std::list<std::string> headers = onlyHeaders(msg);
 
-    if (!response.status) {
-        fmt::printf("Unable to retrieve message list: %s\n", response.statusMessage);
-        return false;
-    }
-
-    // Получение в буфер ответа от сервера в несколько строк (для LIST, RETR)
-    getMultilineData(&response);
-
-    if (response.data.size() == 0) {
-        std::cout << "No messages available on the server." << std::endl;
-    }
-
-    // Вывод полученных строк
-    for (std::string& line: response.data) {
-        std::cout << line << std::endl;
+        for (std::string& line: headers) {
+            printHeader(line);
+        }
     }
     return true;
 }
@@ -131,9 +119,18 @@ bool POP3::printMessage(int messageId) {
     // Получение в буфер ответа от сервера в несколько строк
     getMultilineData(&response);
 
+    bool readingHeaders = true;
     for (std::string& line: response.data) {
-        std::cout << line << std::endl;
+        if (line.empty()) {
+            readingHeaders = false;
+        }
+        if (readingHeaders) {
+            printHeader(line);
+        } else{
+            std::cout << line << std::endl;
+        }
     }
+
     return true;
 }
 
@@ -190,7 +187,7 @@ std::vector<int> POP3::getMessageList() {
 }
 
 // Вывод заголовка выбранного сообщения
-bool POP3::printHeaders(int messageId) {
+std::list<std::string> POP3::onlyHeaders(int messageId) {
     ServerResponse response;
     // Запрос на вывод заголовка и 0 строк сообщения
     sendCommand("TOP " + std::to_string(messageId) + " 0");
@@ -198,15 +195,11 @@ bool POP3::printHeaders(int messageId) {
     getResponse(&response);
     if (!response.status) {
         fmt::printf("Unable to retrieve requested message: %s", response.statusMessage);
-        return false;
+        return std::list<std::string>();
     }
     // Получение в буфер строк ответа
     getMultilineData(&response);
-
-    for (std::string& line: response.data) {
-        std::cout << line << std::endl;
-    }
-    return true;
+    return response.data;
 }
 
 // Закрыть соединение
@@ -228,17 +221,16 @@ bool POP3::readWelcome(){
     return true;
 }
 
+//  Функция сравнения
+bool POP3::startsWith(std::string full, std::string prefix) {
+    return full.compare(0, prefix.size(), prefix) == 0;
+}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+void POP3::printHeader(std::string line) {
+    std::array<std::string, 5> allowedHeaders = {"Date", "From", "Subject", "To"};
+    for (std::string key: allowedHeaders) {
+        if (startsWith(line, key + ":")) {
+            std::cout << line << std::endl;
+        }
+    }
+}

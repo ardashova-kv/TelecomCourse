@@ -16,7 +16,7 @@
 using namespace std;
 
 // Папка на сервере с сайтом
-const string baseDir = "/home/ks/spbstu/www.spbstu.ru/";
+const string baseDir = "/home/ks/cpp/www.cplusplus.com/";
 
 // Функция превращает строку с разделителями в массив строк
 vector<string> split(const string& str, const string& delimiter) {

@@ -47,12 +47,15 @@ public:
 
     std::vector<int> getMessageList();  // Получить список номеров сообщений (для вывода заголовков)
 
-    bool printHeaders(int messageId);   // Вывести заголовки сообщений
+    std::list<std::string> onlyHeaders(int messageId);   // Вывести заголовки сообщений
 
     void close();   // Закрыть соединение
 
     bool readWelcome();
 
+    void printHeader(std::string line);
+
+    bool startsWith(std::string full, std::string prefix);
 };
 
 // Структура для хранения ответа сервера
